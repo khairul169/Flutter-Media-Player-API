@@ -18,6 +18,15 @@ $router->get('/', function () {
 });
 
 /**
+ * Image dir
+ */
+
+$router->get('/images/{filename}', function ($filename) {
+    $path = base_path() . "/public/images/$filename";
+    return response()->download($path, null, [], false);
+});
+
+/**
  * Media Route
  */
 $router->group(['prefix' => 'media'], function () use ($router) {

@@ -14,7 +14,9 @@ class Controller extends BaseController
     {
         return response()->json([
             'status' => 'success',
-            'data' => $data
+            'data' => $data,
+        ], 200, [
+            'Content-Type' => 'application/json',
         ]);
     }
 
@@ -27,6 +29,8 @@ class Controller extends BaseController
         return response()->json([
             'status' => 'error',
             'message' => $message
+        ], 500, [
+            'Content-Type' => 'application/json',
         ]);
     }
 }

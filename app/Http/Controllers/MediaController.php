@@ -10,10 +10,28 @@ use App\Utils;
 
 class MediaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $result = Media::all();
+        $result = Media::all()->toArray();
+
+        foreach ($result as $key => $value) {
+            $result[$key]['image'] = $this->getMediaImageUrl($request, $value['id']);
+        }
+
         return $this->result($result);
+    }
+
+    public function getMedia($id, Request $request)
+    {
+        $media = Media::query()->find($id);
+        if (!$media) {
+            return $this->error('Media not found');
+        }
+
+        $data = $media->toArray();
+        $data['image'] = $this->getMediaImageUrl($request, $data['id']);
+
+        return $this->result($data);
     }
 
     public function upload(Request $request)
@@ -95,19 +113,6 @@ class MediaController extends Controller
         }
     }
 
-    public function getMedia($id, Request $request)
-    {
-        $media = Media::query()->find($id);
-        if (!$media) {
-            return $this->error('Media not found');
-        }
-
-        $data = $media->toArray();
-        $data['image'] = $request->root() . '/media/image/' . $data['id'];
-
-        return $this->result($data);
-    }
-
     public function download($id)
     {
         $media = Media::query()->find($id);
@@ -130,7 +135,7 @@ class MediaController extends Controller
     {
         $media = Media::query()->find($id);
         if (!$media) {
-            return response(null, 404);
+            return redirect('/images/cover_default.png');
         }
 
         $path = $this->getMediaPath($media->filename);
@@ -141,11 +146,16 @@ class MediaController extends Controller
             return response($image)->header('Content-Type', 'image/jpeg');
         }
 
-        return response(null, 404);
+        return redirect('/images/cover_default.png');
     }
 
     private function getMediaPath($file = null)
     {
         return storage_path() . '/media' . ($file ? '/' . $file : '');
+    }
+
+    private function getMediaImageUrl(Request $request, $id)
+    {
+        return $request->root() . '/media/image/' . $id;;
     }
 }
