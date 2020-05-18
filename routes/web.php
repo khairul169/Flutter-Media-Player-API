@@ -13,6 +13,13 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
+$router->get('/', function () {
+    return response('CloudMediaPlayer API');
+});
+
+/**
+ * Media Route
+ */
+$router->group(['prefix' => 'media'], function () use ($router) {
+    $router->get('/', 'MediaController@index');
 });
