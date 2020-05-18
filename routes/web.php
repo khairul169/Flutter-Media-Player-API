@@ -22,4 +22,7 @@ $router->get('/', function () {
  */
 $router->group(['prefix' => 'media'], function () use ($router) {
     $router->get('/', 'MediaController@index');
+    $router->post('/upload', 'MediaController@upload');
+    $router->post('/update/{id}', 'MediaController@update');
+    $router->post('/delete/{id}', 'MediaController@delete');
 });

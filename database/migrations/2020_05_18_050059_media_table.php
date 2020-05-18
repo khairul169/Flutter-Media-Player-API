@@ -15,10 +15,11 @@ class MediaTable extends Migration
     {
         Schema::create('media', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
-            $table->string('artist');
-            $table->string('album');
-            $table->integer('year');
+            $table->string('title')->default('');
+            $table->string('artist')->default('');
+            $table->string('album')->default('');
+            $table->integer('year')->default(0);
+            $table->string('filename');
             $table->timestamps();
         });
     }
