@@ -36,12 +36,13 @@ class MediaController extends Controller
 
     public function upload(Request $request)
     {
-        if (!$request->hasFile('file')) {
+        // Get uploaded file
+        $file = $request->file('media') ?? null;
+        if (!$file) {
             return $this->error('No file');
         }
 
-        // File
-        $file = $request->file('file');
+        // File data
         $filename = $file->getClientOriginalName();
         $ext = substr($filename, strrpos($filename, '.') + 1);
         $filename = substr($filename, 0, strrpos($filename, '.'));

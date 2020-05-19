@@ -29,9 +29,11 @@ class Utils
             }
         }
 
-        // Cover image
-        $img = $file_id3['comments']['picture'][0];
-        $meta_tags['image'] = isset($img) ? $img['data'] : null;
+        if (isset($file_id3['comments'])) {
+            // Cover image
+            $img = $file_id3['comments']['picture'][0];
+            $meta_tags['image'] = isset($img) ? $img['data'] : null;
+        }
 
         return $meta_tags;
     }
