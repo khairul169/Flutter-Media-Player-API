@@ -13,11 +13,9 @@ class MediaController extends Controller
     public function index(Request $request)
     {
         $result = Media::all()->toArray();
-
         foreach ($result as $key => $value) {
-            $result[$key]['image'] = $this->getMediaImageUrl($request, $value['id']);
+            $result[$key] = $this->mapMediaResult($request, $value);
         }
-
         return $this->result($result);
     }
 
@@ -29,9 +27,19 @@ class MediaController extends Controller
         }
 
         $data = $media->toArray();
-        $data['image'] = $this->getMediaImageUrl($request, $data['id']);
-
+        $data = $this->mapMediaResult($request, $data);
         return $this->result($data);
+    }
+
+    private function mapMediaResult($request, $media)
+    {
+        $root = $request->root();
+        $id = $media['id'];
+
+        $media['image'] = "$root/media/image/$id";
+        $media['url'] = "$root/media/get/$id";
+
+        return $media;
     }
 
     public function upload(Request $request)
@@ -127,7 +135,7 @@ class MediaController extends Controller
         }
 
         $headers = [
-            'Content-Type' => mime_content_type($path)
+            'Content-type' => 'audio/mpeg',
         ];
         return response()->download($path, $media->filename, $headers);
     }
@@ -153,10 +161,5 @@ class MediaController extends Controller
     private function getMediaPath($file = null)
     {
         return storage_path() . '/media' . ($file ? '/' . $file : '');
-    }
-
-    private function getMediaImageUrl(Request $request, $id)
-    {
-        return $request->root() . '/media/image/' . $id;;
     }
 }
