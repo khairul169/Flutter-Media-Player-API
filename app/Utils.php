@@ -21,6 +21,7 @@ class Utils
         }
 
         // Get tags
+        $meta_tags['duration'] = $file_id3['playtime_seconds'] ?? 0.0;
         $id3_tags = $file_id3['tags']['id3v2'] ?? $file_id3['tags']['id3v1'];
 
         if ($id3_tags) {

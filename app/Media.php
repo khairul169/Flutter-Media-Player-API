@@ -12,7 +12,7 @@ class Media extends Model
      * @var array
      */
     protected $fillable = [
-        'title', 'artist', 'album', 'year', 'filename',
+        'title', 'artist', 'album', 'year', 'duration', 'filename',
     ];
 
     /**

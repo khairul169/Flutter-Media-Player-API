@@ -72,6 +72,7 @@ class MediaController extends Controller
         $artist = $request->get('artist', $meta_tags['artist'] ?? '');
         $album = $request->get('album', $meta_tags['album'] ?? '');
         $year = $request->get('year', $meta_tags['year'] ?? 0);
+        $duration = $meta_tags['duration'] ?? 0.0;
 
         // Set local filename
         $localname = 'user-' . substr(md5(time()), 5, 16) . ".$ext.media";
@@ -93,6 +94,7 @@ class MediaController extends Controller
                 'artist' => $artist,
                 'album' => $album,
                 'year' => $year,
+                'duration' => $duration,
                 'filename' => $localname,
             ]);
             return $this->result($media);

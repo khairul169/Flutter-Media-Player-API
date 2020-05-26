@@ -19,6 +19,7 @@ class MediaTable extends Migration
             $table->string('artist')->default('');
             $table->string('album')->default('');
             $table->integer('year')->default(0);
+            $table->double('duration')->default(0.0);
             $table->string('filename');
             $table->timestamps();
         });
