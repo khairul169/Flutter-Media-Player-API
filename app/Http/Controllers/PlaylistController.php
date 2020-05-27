@@ -13,6 +13,16 @@ class PlaylistController extends Controller
     {
         try {
             $result = Playlist::query()->with('items')->get();
+
+            foreach ($result as $playlist) {
+                $mapItem = function ($item) {
+                    return $item['title'];
+                };
+
+                $items = array_slice($playlist->items->toArray(), 0, 10);
+                $playlist['subtitle'] = implode(", ", array_map($mapItem, $items));
+            }
+
             return $this->result($result);
         } catch (QueryException $e) {
             return $this->error($e->getMessage());
