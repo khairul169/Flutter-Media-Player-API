@@ -14,22 +14,9 @@ class PlaylistController extends Controller
         try {
             $result = Playlist::query()->with('items')->get();
 
+            // Playlist description
             foreach ($result as $playlist) {
-                $mapTitle = function ($item) {
-                    return $item['title'];
-                };
-                $mapDuration = function ($item) {
-                    return (int) $item['duration'];
-                };
-
-                $items = $playlist->items->toArray();
-                $playlist['subtitle'] = implode(
-                    ", ",
-                    array_map($mapTitle, array_slice($items, 0, 5))
-                );
-                $playlist['play_time'] = array_sum(
-                    array_map($mapDuration, $items)
-                );
+                $this->createDescription($playlist);
             }
 
             return $this->result($result);
@@ -64,5 +51,25 @@ class PlaylistController extends Controller
         } catch (QueryException $e) {
             return $this->error($e->getMessage());
         }
+    }
+
+    private function createDescription($playlist)
+    {
+        $mapTitle = function ($item) {
+            return $item['title'];
+        };
+        $mapDuration = function ($item) {
+            return (int) $item['duration'];
+        };
+
+        $items = $playlist->items->toArray();
+        $playlist['subtitle'] = implode(
+            ", ",
+            array_map($mapTitle, array_slice($items, 0, 5))
+        );
+        $playlist['play_time'] = array_sum(
+            array_map($mapDuration, $items)
+        );
+        return $playlist;
     }
 }

@@ -35,8 +35,8 @@ $router->group(['prefix' => 'media'], function () use ($router) {
     $router->post('/update/{id}', 'MediaController@update');
     $router->post('/delete/{id}', 'MediaController@delete');
     $router->get('/detail/{id}', 'MediaController@getMedia');
-    $router->get('/get/{id}', 'MediaController@download');
-    $router->get('/image/{id}', 'MediaController@getAlbumArt');
+    $router->get('/get/{filename}', 'MediaController@downloadMedia');
+    $router->get('/cover/{filename}', 'MediaController@getCoverImage');
 });
 
 /**

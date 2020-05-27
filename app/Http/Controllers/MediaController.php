@@ -12,36 +12,19 @@ use App\Utils;
 
 class MediaController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $result = Media::all()->toArray();
-        foreach ($result as $key => $value) {
-            $result[$key] = $this->mapMediaResult($request, $value);
-        }
+        $result = Media::query()->get();
         return $this->result($result);
     }
 
-    public function getMedia($id, Request $request)
+    public function getMedia($id)
     {
         $media = Media::query()->find($id);
         if (!$media) {
             return $this->error('Media not found');
         }
-
-        $data = $media->toArray();
-        $data = $this->mapMediaResult($request, $data);
-        return $this->result($data);
-    }
-
-    private function mapMediaResult($request, $media)
-    {
-        $root = $request->root();
-        $id = $media['id'];
-
-        $media['image'] = "$root/media/image/$id";
-        $media['url'] = "$root/media/get/$id";
-
-        return $media;
+        return $this->result($media);
     }
 
     public function upload(Request $request)
@@ -52,17 +35,21 @@ class MediaController extends Controller
             return $this->error('No file');
         }
 
+        // Add to Playlist on uploaded
+        $playlistId = $request->get('playlist_id', 0);
+        $playlist = Playlist::query()->find($playlistId);
+
+        if (!$playlist) {
+            return $this->error('Cannot find playlist');
+        }
+
         // File data
         $filename = $file->getClientOriginalName();
         $ext = substr($filename, strrpos($filename, '.') + 1);
         $filename = substr($filename, 0, strrpos($filename, '.'));
 
-        switch ($ext) {
-            case 'mp3':
-            case 'flac':
-                break;
-            default:
-                return $this->error('Media not supported');
+        if ($ext != 'mp3' && $ext != 'flac') {
+            return $this->error('Media not supported');
         }
 
         // Media id3 tags
@@ -75,42 +62,33 @@ class MediaController extends Controller
         $album = $meta_tags['album'] ?? '';
         $year = $meta_tags['year'] ?? 0;
         $duration = $meta_tags['duration'] ?? 0.0;
+        $cover_img = $meta_tags['image'] ?? null;
 
-        // Set local filename
-        $localname = 'user-' . substr(md5(time()), 5, 16) . ".$ext.media";
-        $path = $this->getMediaPath();
+        // Save uploaded file
+        $media_fname = $this->saveMedia($file, $ext);
+        $cover_fname = $this->createCoverImage($cover_img);
 
-        // Create upload dir if not exist
-        if (!file_exists($path)) {
-            mkdir($path, 777, true);
+        if (!$media_fname) {
+            return $this->error('Cannot save media');
         }
-
-        // Move uploaded file
-        if (!$file->move($path, $localname)) {
-            return $this->error('Cannot move file');
-        }
-
-        // Add to Playlist on uploaded
-        $playlistId = $request->get('playlist_id', 0);
 
         try {
+            // Create media
             $media = Media::query()->create([
                 'title' => $title,
                 'artist' => $artist,
                 'album' => $album,
                 'year' => $year,
                 'duration' => $duration,
-                'filename' => $localname,
+                'media_fname' => $media_fname,
+                'cover_fname' => $cover_fname,
             ]);
 
-            $playlist = Playlist::query()->find($playlistId);
-
-            if ($playlist) {
-                PlaylistItem::query()->create([
-                    'playlist_id' => $playlist->id,
-                    'media_id' => $media->id,
-                ]);
-            }
+            // Add media to playlist
+            PlaylistItem::query()->create([
+                'playlist_id' => $playlist->id,
+                'media_id' => $media->id,
+            ]);
 
             return $this->result($media);
         } catch (QueryException $error) {
@@ -139,44 +117,66 @@ class MediaController extends Controller
         }
     }
 
-    public function download($id)
+    public function downloadMedia($filename)
     {
-        $media = Media::query()->find($id);
-        if (!$media) {
-            return response(null, 404);
-        }
+        $path = $this->getMediaPath($filename);
 
-        $path = $this->getMediaPath($media->filename);
         if (!file_exists($path)) {
             return response(null, 404);
         }
 
-        $headers = [
-            'Content-type' => 'audio/mpeg',
-        ];
-        return response()->download($path, $media->filename, $headers);
+        $headers = ['Content-type' => 'audio/mpeg'];
+        return response()->download($path, $filename, $headers);
     }
 
-    public function getAlbumArt($id)
+    public function getCoverImage($filename)
     {
-        $media = Media::query()->find($id);
-        if (!$media) {
+        $path = $this->getCoverPath($filename);
+
+        if (!file_exists($path)) {
             return redirect('/images/cover_default.png');
         }
 
-        $path = $this->getMediaPath($media->filename);
-        $tags = Utils::getID3Tags($path);
-        $image = $tags['image'] ?? null;
-
-        if ($image) {
-            return response($image)->header('Content-Type', 'image/jpeg');
-        }
-
-        return redirect('/images/cover_default.png');
+        $headers = ['Content-type' => 'image/jpeg'];
+        return response()->download($path, $filename, $headers, 'inline');
     }
 
     private function getMediaPath($file = null)
     {
-        return storage_path() . '/media' . ($file ? '/' . $file : '');
+        return storage_path() . '/media' . ($file ? ('/' . $file) : '');
+    }
+
+    private function getCoverPath($file = null)
+    {
+        return storage_path() . '/cover_image' . ($file ? ('/' . $file) : '');
+    }
+
+    private function saveMedia($file, $type)
+    {
+        $filename = substr(md5(time()), 5, 16) . ".$type";
+        $path = $this->getMediaPath();
+
+        // Create upload dir if not exist
+        if (!file_exists($path)) {
+            mkdir($path, 777, true);
+        }
+
+        // Move uploaded file
+        if (!$file->move($path, $filename)) {
+            return null;
+        }
+        return $filename;
+    }
+
+    private function createCoverImage($image)
+    {
+        $filename = substr(md5('img' . time()), 5, 16) . ".jpg";
+        $path = $this->getCoverPath($filename);
+
+        if (file_put_contents($path, $image) != false) {
+            return $filename;
+        }
+
+        return null;
     }
 }
