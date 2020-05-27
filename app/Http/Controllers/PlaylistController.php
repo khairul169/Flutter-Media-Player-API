@@ -53,6 +53,24 @@ class PlaylistController extends Controller
         }
     }
 
+    public function removeItem($id, Request $request)
+    {
+        $mediaId = $request->get('media_id');
+        if (!isset($mediaId)) {
+            return $this->error('Media id empty.');
+        }
+
+        $item = PlaylistItem::query()
+            ->firstWhere(['playlist_id' => $id, 'media_id' => $mediaId]);
+
+        if ($item) {
+            $item->delete();
+            return $this->result(true);
+        } else {
+            return $this->error('Cannot remove item');
+        }
+    }
+
     private function createDescription($playlist)
     {
         $mapTitle = function ($item) {
@@ -63,10 +81,9 @@ class PlaylistController extends Controller
         };
 
         $items = $playlist->items->toArray();
-        $playlist['subtitle'] = implode(
-            ", ",
-            array_map($mapTitle, array_slice($items, 0, 5))
-        );
+        $playlist['subtitle'] = (sizeof($items) > 0)
+            ? implode(", ", array_map($mapTitle, array_slice($items, 0, 5)))
+            : 'Empty';
         $playlist['play_time'] = array_sum(
             array_map($mapDuration, $items)
         );
