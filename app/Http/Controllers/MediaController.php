@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Media;
+use App\Playlist;
+use App\PlaylistItem;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use Exception;
@@ -66,12 +68,12 @@ class MediaController extends Controller
         // Media id3 tags
         $meta_tags = Utils::getID3Tags($file->getRealPath());
 
-        // Media title
-        $title = $request->get('title', $meta_tags['title'] ?? '');
+        // Media data
+        $title = $meta_tags['title'] ?? '';
         $title = !empty($title) ? $title : $filename;
-        $artist = $request->get('artist', $meta_tags['artist'] ?? '');
-        $album = $request->get('album', $meta_tags['album'] ?? '');
-        $year = $request->get('year', $meta_tags['year'] ?? 0);
+        $artist = $meta_tags['artist'] ?? '';
+        $album = $meta_tags['album'] ?? '';
+        $year = $meta_tags['year'] ?? 0;
         $duration = $meta_tags['duration'] ?? 0.0;
 
         // Set local filename
@@ -88,6 +90,9 @@ class MediaController extends Controller
             return $this->error('Cannot move file');
         }
 
+        // Add to Playlist on uploaded
+        $playlistId = $request->get('playlist_id', 0);
+
         try {
             $media = Media::query()->create([
                 'title' => $title,
@@ -97,6 +102,16 @@ class MediaController extends Controller
                 'duration' => $duration,
                 'filename' => $localname,
             ]);
+
+            $playlist = Playlist::query()->find($playlistId);
+
+            if ($playlist) {
+                PlaylistItem::query()->create([
+                    'playlist_id' => $playlist->id,
+                    'media_id' => $media->id,
+                ]);
+            }
+
             return $this->result($media);
         } catch (QueryException $error) {
             return $this->error('Cannot insert data. ' . $error->getMessage());

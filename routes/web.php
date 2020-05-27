@@ -38,3 +38,14 @@ $router->group(['prefix' => 'media'], function () use ($router) {
     $router->get('/get/{id}', 'MediaController@download');
     $router->get('/image/{id}', 'MediaController@getAlbumArt');
 });
+
+/**
+ * Playlist Route
+ */
+$router->group(['prefix' => 'playlist'], function () use ($router) {
+    $router->get('/', 'PlaylistController@index');
+    $router->post('/create', 'PlaylistController@create');
+    $router->post('/items/{id}/add', 'PlaylistController@addItem');
+    $router->post('/items/{id}/remove', 'PlaylistController@removeItem');
+    $router->post('/items/{id}', 'PlaylistController@getItems');
+});
