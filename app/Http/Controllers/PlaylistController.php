@@ -15,12 +15,21 @@ class PlaylistController extends Controller
             $result = Playlist::query()->with('items')->get();
 
             foreach ($result as $playlist) {
-                $mapItem = function ($item) {
+                $mapTitle = function ($item) {
                     return $item['title'];
                 };
+                $mapDuration = function ($item) {
+                    return (int) $item['duration'];
+                };
 
-                $items = array_slice($playlist->items->toArray(), 0, 10);
-                $playlist['subtitle'] = implode(", ", array_map($mapItem, $items));
+                $items = $playlist->items->toArray();
+                $playlist['subtitle'] = implode(
+                    ", ",
+                    array_map($mapTitle, array_slice($items, 0, 5))
+                );
+                $playlist['play_time'] = array_sum(
+                    array_map($mapDuration, $items)
+                );
             }
 
             return $this->result($result);
